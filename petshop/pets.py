@@ -21,11 +21,16 @@ def format_date(d):
 def search(field, value):
     conn = db.get_db()
     cursor = conn.cursor()
+    oby = request.args.get("order_by", "id") # TODO. This is currently not used. 
+    order = request.args.get("order", "asc")
     cursor.execute("select id from tag where name = ?", [value]);
     tag_id = cursor.fetchone()[0]
-    cursor.execute("select p.id, p.name, p.bought, p.sold, p.species from pet p, tags_pets t where t.tag = ? and t.pet = p.id", [tag_id])
+    if order == "asc":
+        cursor.execute(f"select p.id, p.name, p.bought, p.sold, p.species from pet p, tags_pets t where t.tag = {tag_id} and t.pet = p.id order by p.{oby} asc")
+    else:
+        cursor.execute(f"select p.id, p.name, p.bought, p.sold, p.species from pet p, tags_pets t where t.tag = {tag_id} and t.pet = p.id order by p.{oby} desc")
     pets = cursor.fetchall()
-    return render_template("search.html", pets = pets)
+    return render_template("search.html", pets = pets, field = field, value = value, order="desc" if order=="asc" else "asc")
 
 @bp.route("/")
 def dashboard():

@@ -3,6 +3,7 @@ import datetime
 from flask import Blueprint
 from flask import render_template, request, redirect, url_for, jsonify
 from flask import g
+from flask.json.tag import TagDict
 
 from . import db
 
@@ -18,8 +19,13 @@ def format_date(d):
 
 @bp.route("/search/<field>/<value>")
 def search(field, value):
-    # TBD
-    return ""
+    conn = db.get_db()
+    cursor = conn.cursor()
+    cursor.execute("select id from tag where name = ?", [value]);
+    tag_id = cursor.fetchone()[0]
+    cursor.execute("select p.id, p.name, p.bought, p.sold, p.species from pet p, tags_pets t where t.tag = ? and t.pet = p.id", [tag_id])
+    pets = cursor.fetchall()
+    return render_template("search.html", pets = pets)
 
 @bp.route("/")
 def dashboard():
@@ -70,7 +76,6 @@ def edit(pid):
                     description = description,
                     species = species,
                     tags = tags)
-        print(data)
         return render_template("editpet.html", **data)
     elif request.method == "POST":
         description = request.form.get('description')
